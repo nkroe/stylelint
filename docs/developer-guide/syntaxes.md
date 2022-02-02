@@ -1,35 +1,42 @@
-# Working on syntaxes
+# Writing custom syntaxes
 
-Please help us enhance and debug the [syntaxes](../about/syntaxes.md) we use in stylelint:
+Custom syntaxes are [PostCSS syntaxes](https://github.com/postcss/postcss#syntaxes) written by the community to support other styling languages and CSS-in-JS libraries using the [`customSyntax` option](../user-guide/usage/options.md#customSyntax).
 
-- [postcss-css-in-js](https://github.com/stylelint/postcss-css-in-js)
-- [postcss-html](https://github.com/gucong3000/postcss-html)
-- [postcss-less](https://github.com/webschik/postcss-less)
-- [postcss-markdown](https://github.com/stylelint/postcss-markdown)
-- [postcss-sass](https://github.com/AleshaOleg/postcss-sass)
-- [postcss-scss](https://github.com/postcss/postcss-scss)
+To write one, familiarize yourself with PostCSS's [how to write custom syntax](https://github.com/postcss/postcss/blob/main/docs/syntax.md) guide.
 
-To contribute to a syntax, you should:
+Existing syntaxes that you can use for reference include:
 
-1. Familiarize yourself with PostCSS's [how to write custom syntax](https://github.com/postcss/postcss/blob/master/docs/syntax.md) guide.
-2. Use the [`syntax: *` labels](https://github.com/stylelint/stylelint/labels?utf8=%E2%9C%93&q=syntax%3A) to identify which syntax is behind an issue.
-3. Go to the repository for that syntax.
-4. Read their contributing guidelines.
+- [postcss-scss](https://www.npmjs.com/package/postcss-scss)
+- [postcss-less](https://www.npmjs.com/package/postcss-less)
+- [postcss-html](https://www.npmjs.com/package/postcss-html)
+- [postcss-lit](https://www.npmjs.com/package/postcss-lit)
 
-## Workarounds
+The latter two use `Document` nodes, [introduced in PostCSS 8.3](https://github.com/postcss/postcss/releases/tag/8.3.0) to support files with multiple roots.
 
-Fixing bugs in syntaxes can take time. stylelint can work around these bug by turning off autofix for incompatible sources. Autofix can then remain safe to use while contributors try to fix the underlying issue.
+After publishing your custom syntax, we recommend creating a shared-config that:
 
-### Current workarounds
+- extends the [standard config](https://github.com/stylelint/stylelint-config-standard)
+- bundles your custom syntax
+- turns off any incompatible built-in rules
 
-stylelint currently turns off autofix for sources that contain:
+All within an `overrides` for the supported file extensions.
 
-- ~~nested tagged template literals ([issue #4119](https://github.com/stylelint/stylelint/issues/4119))~~
+For example, if you're creating a custom syntax for a language called "foo" (which uses the file extension `.foo`), we recommend creating a shared-config called "stylelint-config-standard-foo" with the following content:
 
-### Add a workaround
+```js
+module.exports = {
+  overrides: [
+    {
+      files: ["*.foo", "**/*.foo"],
+      customSyntax: require("postcss-foo"),
+      extends: ["stylelint-config-standard"],
+      rules: {
+        "at-rule-no-unknown": null
+        // ..
+      }
+    }
+  ]
+};
+```
 
-To add a new workaround, you should:
-
-1. Add code to [`lib/lintSource.js`](https://github.com/stylelint/stylelint/blob/master/lib/lintSource.js) to detect the incompatible pattern.
-2. Add a corresponding test to [`lib/__tests__/standalone-fix.test.js`](https://github.com/stylelint/stylelint/blob/master/lib/__tests__/standalone-fix.test.js).
-3. Document the workaround in [`docs/developer-guides/syntaxes.md`](https://github.com/stylelint/stylelint/blob/master/docs/developer-guide/syntaxes.md).
+We recommended requiring the custom syntax until PostCSS@7 is no longer in circulation.

@@ -1,6 +1,6 @@
 # Node.js API
 
-The stylelint module includes a `lint()` function that provides the Node.js API.
+The Stylelint module includes a `lint()` function that provides the Node.js API.
 
 ```js
 stylelint.lint(options).then(function (resultObject) {
@@ -16,15 +16,15 @@ In addition to the [standard options](options.md), the Node API accepts:
 
 A [configuration object](../configure.md).
 
-stylelint does not bother looking for a `.stylelintrc` file if you use this option.
-
-### `configOverrides`
-
-A partial stylelint configuration object whose properties override the existing config object, whether stylelint loads the config via the `config` option or a `.stylelintrc` file.
+Stylelint does not bother looking for a `.stylelintrc` file if you use this option.
 
 ### `code`
 
 A string to lint.
+
+### `cwd`
+
+The directory from which Stylelint will look for files. Defaults to the current working directory returned by `process.cwd()`.
 
 ### `files`
 
@@ -38,7 +38,7 @@ Though both `files` and `code` are "optional", you _must_ have one and _cannot_ 
 
 The options that are passed with `files`.
 
-For example, you can set a specific `cwd` manually. Relative globs in `files` are considered relative to this path. And by default, `cwd` will be set by `process.cwd()`.
+For example, you can set a specific `cwd` to use when globbing paths. Relative globs in `files` are considered relative to this path. By default, `globbyOptions.cwd` will be set by `cwd`.
 
 For more detail usage, see [Globby Guide](https://github.com/sindresorhus/globby#options).
 
@@ -46,13 +46,17 @@ For more detail usage, see [Globby Guide](https://github.com/sindresorhus/globby
 
 `stylelint.lint()` returns a Promise that resolves with an object containing the following properties:
 
+### `cwd`
+
+The directory used as the working directory for the linting operation.
+
 ### `errored`
 
-Boolean. If `true`, at least one rule with an "error"-level severity registered a violation.
+Boolean. If `true`, at least one rule with an "error"-level severity registered a problem.
 
 ### `output`
 
-A string displaying the formatted violations (using the default formatter or whichever you passed).
+A string displaying the formatted problems (using the default formatter or whichever you passed).
 
 ### `postcssResults`
 
@@ -60,7 +64,7 @@ An array containing all the accumulated [PostCSS LazyResults](https://api.postcs
 
 ### `results`
 
-An array containing all the stylelint result objects (the objects that formatters consume).
+An array containing all the Stylelint result objects (the objects that formatters consume).
 
 ### `maxWarningsExceeded`
 
@@ -166,4 +170,35 @@ stylelint
   });
 ```
 
-Note that the customSyntax option also accepts a string. [Refer to the options documentation for details](./options.md).
+Note that the customSyntax option also accepts a string. [Refer to the options documentation for details](./options.md#customsyntax).
+
+## Resolving the effective config for a file
+
+If you want to find out what exact configuration will be used for a file without actually linting it, you can use the `resolveConfig()` function. Given a file path, it will return a Promise that resolves with the effective configuration object:
+
+```js
+const config = await stylelint.resolveConfig(filePath);
+
+// config => {
+//   rules: {
+//     'color-no-invalid-hex': true
+//   },
+//   extends: [
+//     'stylelint-config-standard',
+//     'stylelint-config-css-modules'
+//   ],
+//   plugins: [
+//     'stylelint-scss'
+//   ],
+//   …
+// }
+```
+
+If a configuration cannot be found for a file, `resolveConfig()` will return a Promise that resolves to `undefined`.
+
+You can also pass the following subset of the [options that you would normally pass to `lint()`](#options):
+
+- `cwd`
+- `config`
+- `configBasedir`
+- `customSyntax`
